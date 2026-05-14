@@ -1,6 +1,6 @@
 const CACHE_NAME = 'pwa-auth-cache-v1';
 
-// CHANGE THIS: Use paths relative to the sw.js location
+// Relative names ensure the worker resolves them against the /cdn-stocktaking/ directory location
 const ASSETS = [
   './',
   'index.html',
@@ -10,13 +10,17 @@ const ASSETS = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting()) // Force immediate activation
+      .then((cache) => {
+        return cache.addAll(ASSETS);
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request);
+    })
   );
 });
