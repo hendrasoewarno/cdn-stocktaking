@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure PWA</title>
+    <link rel="manifest" href="/manifest.json">
+    <script src="google.com" async defer></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .hidden { display: none; }
+        button { padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Login Screen -->
+        <div id="login-layer">
+            <h2>Login Required</h2>
+            <div id="g_id_onload"
+                 data-client_id="1024663630660-ie7up3l4v69ooe1dcosb2t5hrnu17f3n.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_select="true">
+            </div>
+            <div class="g_id_signin" data-type="standard"></div>
+        </div>
+
+        <!-- Authenticated PWA Content -->
+        <div id="app-layer" class="hidden">
+            <h2>Welcome to the PWA</h2>
+            <p id="user-info"></p>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Register Service Worker for PWA compliance
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+
+        // Parse JWT Token payload
+        function parseJwt(token) {
+            try { return JSON.parse(atob(token.split('.')[1])); }
+            catch (e) { return null; }
+        }
+
+        // Check persistent login state on load
+        window.onload = function () {
+            const savedUser = localStorage.getItem('pwa_user');
+            if (savedUser) {
+                showApp(JSON.parse(savedUser));
+            }
+        }
+
+        // Handle Google OAuth Response
+        function handleCredentialResponse(response) {
+            const responsePayload = parseJwt(response.credential);
+            if (responsePayload) {
+                const userData = { name: responsePayload.name, email: responsePayload.email };
+                localStorage.setItem('pwa_user', JSON.stringify(userData));
+                showApp(userData);
+            }
+        }
+
+        function showApp(user) {
+            document.getElementById('login-layer').classList.add('hidden');
+            document.getElementById('app-layer').classList.remove('hidden');
+            document.getElementById('user-info').innerText = `Hello, ${user.name} (${user.email})`;
+        }
+
+        // Explicit Intentional Logout
+        function logout() {
+            localStorage.removeItem('pwa_user');
+            google.accounts.id.disableAutoSelect();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
